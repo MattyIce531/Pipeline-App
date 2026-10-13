@@ -1,0 +1,442 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Loan Pipeline</title>
+<script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --bg:#f3f5f6;--surface:#ffffff;--sunk:#e9eef0;--fg:#16222a;--muted:#5b6b75;--faint:#8a98a1;--line:#d6dee2;
+  --accent:#1d5b78;--accent-ink:#ffffff;--accent-soft:#dcebf2;
+  --s-fin:#c9dbe5;--s-ndmgo:#8fb7cb;--s-ndm:#4f8eae;--s-loi:#1d5b78;--s-closed:#2f7d5b;--s-lost:#a9b3b8;
+  --warn-bg:#fbefd6;--warn-fg:#7a5310;--bad-fg:#a03a2e;
+  --ui:"Instrument Sans","Segoe UI",system-ui,sans-serif;--num:"IBM Plex Mono",Consolas,monospace;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0}
+body{background:var(--bg);color:var(--fg);font-family:var(--ui);font-size:14px;line-height:1.45}
+.wrap{padding:14px 14px 40px;display:flex;flex-direction:column;gap:14px}
+h1{font-size:19px;font-weight:600;margin:0;letter-spacing:-.01em}
+h2{font-size:12px;font-weight:600;margin:0;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.top{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+.meta{display:flex;gap:10px;align-items:center;color:var(--muted);font-size:12.5px;flex-wrap:wrap}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--faint);display:inline-block;margin-right:5px}
+.dot.on{background:var(--s-closed)}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+button{font:inherit;font-size:13px;font-weight:500;border-radius:7px;border:1px solid var(--line);background:var(--surface);color:var(--fg);padding:7px 12px;cursor:pointer}
+button:hover{border-color:var(--faint)}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,tr:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+button.danger{color:var(--bad-fg)}
+button.danger.armed{background:var(--bad-fg);color:#fff;border-color:var(--bad-fg)}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line)}
+.tabs button{border:none;border-bottom:2px solid transparent;border-radius:0;background:none;color:var(--muted);padding:8px 10px}
+.tabs button.on{color:var(--fg);border-bottom-color:var(--accent)}
+.kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.kpi{background:var(--surface);padding:11px 13px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.kpi .l{font-size:11.5px;color:var(--muted)}
+.kpi .v{font-family:var(--num);font-size:20px;font-weight:500;letter-spacing:-.02em}
+.kpi .s{font-size:11.5px;color:var(--faint)}
+.kpi.warn{background:var(--warn-bg)}.kpi.warn .v,.kpi.warn .l{color:var(--warn-fg)}
+.grid2{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(0,1fr);gap:14px}
+@media (max-width:860px){.grid2{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.panel .hd{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.hint{font-size:12px;color:var(--faint)}
+.scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+th{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;background:var(--surface)}
+th:first-child,td:first-child{text-align:left}
+td.num{font-family:var(--num);font-size:12.5px}
+tr.sum td{font-weight:600;border-top:1.5px solid var(--fg);background:var(--sunk)}
+tr.sub td{color:var(--muted)}
+tr.click{cursor:pointer}
+tr.click:hover td,tr.sel td{background:var(--accent-soft)}
+.stages{display:flex;flex-direction:column;gap:9px}
+.st .row{display:flex;justify-content:space-between;gap:8px;font-size:13px}
+.track{height:10px;background:var(--sunk);border-radius:3px;margin-top:4px;overflow:hidden}
+.track i{display:block;height:100%;border-radius:3px}
+.qrows{display:flex;flex-direction:column;gap:8px}
+.q{display:grid;grid-template-columns:62px minmax(0,1fr) 74px;gap:8px;align-items:center;font-size:12.5px}
+.qbar{display:flex;height:16px;background:var(--sunk);border-radius:3px;overflow:hidden}
+.qbar i{display:block;height:100%}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:5px}
+.sw{width:10px;height:10px;border-radius:2px;display:inline-block}
+.filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.filters input,.filters select{font:inherit;font-size:13px;padding:7px 9px;border:1px solid var(--line);border-radius:7px;background:var(--surface);color:var(--fg);min-width:0}
+.filters input[type=search]{flex:1 1 180px}
+.chip{display:inline-block;font-size:11.5px;font-weight:500;padding:2px 8px;border-radius:999px;white-space:nowrap}
+.flag{font-size:11px;font-weight:600;color:var(--warn-fg);background:var(--warn-bg);padding:1px 6px;border-radius:4px;margin-left:6px}
+.borrower{font-weight:500;max-width:260px;overflow:hidden;text-overflow:ellipsis;display:inline-block;vertical-align:bottom}
+.sortable{cursor:pointer;user-select:none}
+.empty{padding:26px 8px;text-align:center;color:var(--muted)}
+.drawer-bg{position:fixed;inset:0;background:rgba(10,20,26,.38);z-index:20}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(520px,100%);background:var(--surface);border-left:1px solid var(--line);z-index:21;display:flex;flex-direction:column}
+.drawer header{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid var(--line);gap:8px}
+.drawer header h3{margin:0;font-size:16px;font-weight:600}
+.drawer form{flex:1;overflow-y:auto;padding:14px 16px;display:grid;grid-template-columns:1fr 1fr;gap:11px}
+.drawer label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted);font-weight:500;min-width:0}
+.drawer label.full{grid-column:1/-1}
+.drawer input,.drawer select,.drawer textarea{font:inherit;font-size:14px;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:7px;padding:8px 10px;width:100%}
+.drawer input.n{font-family:var(--num);text-align:right}
+.drawer textarea{min-height:120px;resize:vertical}
+.drawer footer{display:flex;gap:8px;justify-content:space-between;padding:12px 16px;border-top:1px solid var(--line);flex-wrap:wrap}
+.drawer .err{grid-column:1/-1;color:var(--bad-fg);font-size:13px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:20px;background:var(--fg);color:var(--bg);padding:8px 14px;border-radius:8px;font-size:13px;z-index:30}
+.notice{background:var(--warn-bg);color:var(--warn-fg);border-radius:8px;padding:10px 14px;font-size:13px}
+@media (max-width:520px){.drawer form{grid-template-columns:1fr}.kpi .v{font-size:18px}.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (prefers-reduced-motion:no-preference){.drawer{animation:slide .18s ease-out}@keyframes slide{from{transform:translateX(24px);opacity:.6}to{transform:none;opacity:1}}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div style="display:flex;flex-direction:column;gap:3px">
+      <h1>2026 Loan Pipeline</h1>
+      <div class="meta"><span id="asof"></span><span><span class="dot" id="dot"></span><span id="liveTxt">Connecting to workbook</span></span></div>
+    </div>
+    <div class="actions">
+      <button id="refreshBtn" type="button">Refresh</button>
+      <button id="newBtn" type="button" class="primary">New deal</button>
+    </div>
+  </div>
+  <div id="notice" class="notice" hidden></div>
+  <div class="tabs" role="tablist">
+    <button type="button" class="on" data-tab="overview" role="tab">Overview</button>
+    <button type="button" data-tab="deals" role="tab">Deals</button>
+  </div>
+
+  <div id="tab-overview" style="display:flex;flex-direction:column;gap:14px">
+    <section class="kpis" id="kpis" aria-label="Pipeline summary"></section>
+    <div class="grid2">
+      <section class="panel">
+        <div class="hd"><h2>Pipeline by group</h2><span class="hint">Select a group to see its deals</span></div>
+        <div class="scroll"><table id="groupTbl"></table></div>
+      </section>
+      <div style="display:flex;flex-direction:column;gap:14px;min-width:0">
+        <section class="panel"><div class="hd"><h2>Active by stage</h2><span class="hint" id="stageHint"></span></div><div class="stages" id="stages"></div></section>
+        <section class="panel">
+          <div class="hd"><h2>By quarter</h2></div>
+          <div class="legend"><span><i class="sw" style="background:var(--s-closed)"></i>Closed</span><span><i class="sw" style="background:var(--s-loi)"></i>Active</span><span><i class="sw" style="background:var(--s-lost)"></i>Lost</span></div>
+          <div class="qrows" id="quarters"></div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <section id="tab-deals" class="panel" hidden>
+    <div class="hd"><h2>Deals</h2><span class="hint" id="regCount"></span></div>
+    <div class="filters">
+      <input type="search" id="fSearch" placeholder="Search borrower, RM or notes" aria-label="Search deals">
+      <select id="fGroup" aria-label="Group"></select>
+      <select id="fRm" aria-label="RM"></select>
+      <select id="fStage" aria-label="Stage"></select>
+      <select id="fQtr" aria-label="Quarter"></select>
+      <button type="button" id="fClear">Clear filters</button>
+    </div>
+    <div class="scroll"><table id="dealTbl"></table></div>
+  </section>
+</div>
+
+<div id="drawerBg" class="drawer-bg" hidden></div>
+<aside id="drawer" class="drawer" hidden role="dialog" aria-labelledby="dTitle">
+  <header><h3 id="dTitle">New deal</h3><button type="button" id="dClose">Close</button></header>
+  <form id="dForm" novalidate>
+    <label class="full">Borrower<input id="f_borrower" autocomplete="off"></label>
+    <label>Group<select id="f_group"></select></label>
+    <label>RM<input id="f_rm" list="rmList" autocomplete="off"></label>
+    <label class="full">Loan classification<input id="f_classification" placeholder="Term Loan / RLOC" autocomplete="off"></label>
+    <label>Commitment amount<input id="f_commitment" class="n" inputmode="decimal"></label>
+    <label>Funded amount<input id="f_funded" class="n" inputmode="decimal"></label>
+    <label>Fees<input id="f_fees" class="n" inputmode="decimal"></label>
+    <label>Deposits<input id="f_deposits" class="n" inputmode="decimal"></label>
+    <label>Rate (%)<input id="f_rate" class="n" inputmode="decimal" placeholder="7.25"></label>
+    <label>Probability of close (%)<input id="f_probability" class="n" inputmode="decimal"></label>
+    <label>Deal stage<select id="f_stage"></select></label>
+    <label>Expected close date<input id="f_closeDate" type="date"></label>
+    <label class="full">Notes<textarea id="f_notes"></textarea></label>
+    <div class="err" id="dErr" hidden></div>
+  </form>
+  <footer>
+    <div style="display:flex;gap:8px"><button type="button" id="dDelete" class="danger">Delete deal</button><button type="button" id="dShow">Show in sheet</button></div>
+    <div style="display:flex;gap:8px"><button type="button" id="dCancel">Cancel</button><button type="button" id="dSave" class="primary">Save deal</button></div>
+  </footer>
+</aside>
+<datalist id="rmList"></datalist>
+<div id="toast" class="toast" hidden></div>
+
+<script>
+(function(){
+// ---------- Constants ----------
+const TABLE="Deals";
+const GROUPS=["Fund Finance","Healthcare Finance","Lender Finance","Mid Corporate","Sponsor Finance","Syndications"];
+const STAGES=[
+  {k:"Financials Received",p:10,c:"var(--s-fin)",fg:"var(--fg)"},
+  {k:"Going to NDM",p:25,c:"var(--s-ndmgo)",fg:"var(--fg)"},
+  {k:"NDM Approved",p:50,c:"var(--s-ndm)",fg:"#fff"},
+  {k:"LOI Accepted",p:75,c:"var(--s-loi)",fg:"#fff"},
+  {k:"Closed",p:100,c:"var(--s-closed)",fg:"#fff"},
+  {k:"Lost",p:0,c:"var(--s-lost)",fg:"var(--fg)"}];
+const STAGE=Object.fromEntries(STAGES.map(s=>[s.k,s]));
+const ACTIVE=s=>s!=="Closed"&&s!=="Lost";
+// Workbook columns the app reads and writes (formula columns are left alone)
+const INPUTS=["Deal ID","Borrower","Group","RM","Loan Classification","Commitment Amount","Funded Amount","Fees","Deposits","Rate","Probability of Close","Deal Stage","Expected Close Date","Notes"];
+
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const todayISO=(()=>{const d=new Date();return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10)})();
+$("asof").textContent="As of "+new Date().toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"});
+
+// ---------- Excel date helpers ----------
+const serialToISO=v=>{if(typeof v!=="number"||!v)return "";return new Date(Math.round((v-25569)*86400000)).toISOString().slice(0,10)};
+const isoToSerial=s=>{const [y,m,d]=s.split("-").map(Number);return Date.UTC(y,m-1,d)/86400000+25569};
+const n0=v=>{const n=typeof v==="number"?v:Number(String(v??"").replace(/[$,\s%]/g,""));return isFinite(n)?n:0};
+
+// ---------- State ----------
+let deals=[],HEAD=[],editing=null,ready=false,busy=false;
+const st={q:"",group:"",rm:"",stage:"",qtr:"",sort:"closeDate",dir:1,tab:"overview"};
+const col=name=>HEAD.indexOf(name);
+
+// ---------- Workbook access ----------
+function rowsToDeals(head,rows){
+  HEAD=head.map(h=>String(h).trim());
+  const out=[];
+  rows.forEach((r,i)=>{
+    const g=name=>{const c=HEAD.indexOf(name);return c<0?"":r[c]};
+    const borrower=String(g("Borrower")??"").trim();
+    if(!borrower)return;
+    const rate=g("Rate");const prob=g("Probability of Close");
+    out.push({row:i,id:String(g("Deal ID")||""),borrower,group:String(g("Group")||"").trim(),rm:String(g("RM")||"").trim(),
+      classification:String(g("Loan Classification")||"").trim(),commitment:n0(g("Commitment Amount")),funded:n0(g("Funded Amount")),
+      fees:n0(g("Fees")),deposits:n0(g("Deposits")),rate:(rate===""||rate===null)?null:n0(rate)*100,
+      probability:n0(prob)*100,stage:String(g("Deal Stage")||"").trim(),closeDate:serialToISO(g("Expected Close Date")),
+      notes:String(g("Notes")||"")});
+  });
+  return out;
+}
+async function loadDeals(){
+  return Excel.run(async ctx=>{
+    const t=ctx.workbook.tables.getItemOrNullObject(TABLE);
+    await ctx.sync();
+    if(t.isNullObject)throw {user:"This workbook has no Deals table. Open 2026 Loan Pipeline Dashboard.xlsx and try again."};
+    const h=t.getHeaderRowRange().load("values");const b=t.getDataBodyRange().load("values");
+    await ctx.sync();
+    deals=rowsToDeals(h.values[0],b.values);
+  });
+}
+function nextId(idCol,vals){
+  let max=0;for(const r of vals){const m=/^D-(\d+)$/.exec(String(r[idCol]));if(m)max=Math.max(max,Number(m[1]))}
+  let s=String(max+1);while(s.length<3)s="0"+s;return "D-"+s;
+}
+async function writeDeal(o,existingId){
+  return Excel.run(async ctx=>{
+    const t=ctx.workbook.tables.getItem(TABLE);
+    const h=t.getHeaderRowRange().load("values");const body=t.getDataBodyRange();body.load("values");
+    await ctx.sync();
+    const head=h.values[0].map(x=>String(x).trim());const vals=body.values;
+    const idCol=head.indexOf("Deal ID"),bCol=head.indexOf("Borrower");
+    let idx=-1,id=existingId;
+    if(id){idx=vals.findIndex(r=>String(r[idCol])===id);if(idx<0)throw {user:"This deal was removed by someone else. Close the form and add it again if you need it."}}
+    else{
+      id=nextId(idCol,vals);
+      idx=vals.findIndex(r=>String(r[idCol]).trim()===""&&String(r[bCol]).trim()==="");
+      if(idx<0)throw {user:"The Deals table is full. Add more rows at the bottom of the Deals tab, then save again."};
+    }
+    const rec={"Deal ID":id,"Borrower":o.borrower,"Group":o.group,"RM":o.rm,"Loan Classification":o.classification,
+      "Commitment Amount":o.commitment,"Funded Amount":o.funded,"Fees":o.fees,"Deposits":o.deposits,
+      "Rate":o.rate==null?"":o.rate/100,"Probability of Close":o.probability/100,"Deal Stage":o.stage,
+      "Expected Close Date":isoToSerial(o.closeDate),"Notes":o.notes};
+    for(const k of Object.keys(rec)){const c=head.indexOf(k);if(c>=0)body.getCell(idx,c).values=[[rec[k]]]}
+    await ctx.sync();
+    return id;
+  });
+}
+async function clearDeal(id){
+  return Excel.run(async ctx=>{
+    const t=ctx.workbook.tables.getItem(TABLE);
+    const h=t.getHeaderRowRange().load("values");const body=t.getDataBodyRange();body.load("values");
+    await ctx.sync();
+    const head=h.values[0].map(x=>String(x).trim());const idx=body.values.findIndex(r=>String(r[head.indexOf("Deal ID")])===id);
+    if(idx<0)return;
+    for(const k of INPUTS){const c=head.indexOf(k);if(c>=0)body.getCell(idx,c).values=[[""]]}
+    await ctx.sync();
+  });
+}
+async function showInSheet(id){
+  return Excel.run(async ctx=>{
+    const t=ctx.workbook.tables.getItem(TABLE);
+    const h=t.getHeaderRowRange().load("values");const body=t.getDataBodyRange();body.load("values");
+    await ctx.sync();
+    const head=h.values[0].map(x=>String(x).trim());const idx=body.values.findIndex(r=>String(r[head.indexOf("Deal ID")])===id);
+    if(idx<0)return;
+    t.worksheet.activate();body.getRow(idx).select();await ctx.sync();
+  });
+}
+
+// ---------- Formatting ----------
+const M=v=>{v=v||0;const a=Math.abs(v);if(a>=1e9)return "$"+(v/1e9).toFixed(2)+"B";if(a>=1e6)return "$"+(v/1e6).toFixed(1)+"M";if(a>=1e3)return "$"+(v/1e3).toFixed(0)+"K";return "$"+v.toFixed(0)};
+const D=v=>"$"+Math.round(v||0).toLocaleString("en-US");
+const pct=v=>v==null?"n/a":v.toFixed(2)+"%";
+const qtr=d=>{if(!d)return "";const [y,m]=d.split("-").map(Number);return "Q"+Math.ceil(m/3)+" "+y};
+const qKey=q=>{if(!q)return "0000Q0";const [a,b]=q.split(" ");return b+a};
+const fmtDate=d=>{if(!d)return "";const [y,m,dd]=d.split("-");return Number(m)+"/"+Number(dd)+"/"+y};
+function agg(rows){let c=0,f=0,fe=0,d=0,pw=0,rf=0,rw=0;
+  for(const x of rows){c+=x.commitment;f+=x.funded;fe+=x.fees;d+=x.deposits;pw+=x.commitment*x.probability/100;if(x.rate!=null&&x.funded>0){rf+=x.funded;rw+=x.rate*x.funded}}
+  return {n:rows.length,c,f,fe,d,pw,rate:rf?rw/rf:null}}
+
+// ---------- Rendering ----------
+function renderKpis(){
+  const act=deals.filter(x=>ACTIVE(x.stage)),A=agg(act),C=agg(deals.filter(x=>x.stage==="Closed")),L=agg(deals.filter(x=>x.stage==="Lost"));
+  const past=act.filter(x=>x.closeDate&&x.closeDate<todayISO);
+  const tiles=[["Active commitments",M(A.c),A.n+" deals · "+M(A.f)+" funded"],["Probability-weighted",M(A.pw),(A.c?Math.round(A.pw/A.c*100):0)+"% of active"],
+    ["Closed YTD",M(C.c),C.n+" deals · "+pct(C.rate)],["Active fees",M(A.fe),"Deposits "+M(A.d)],
+    ["Past close date",String(past.length),past.length?M(agg(past).c)+" still active":"None outstanding","warn"],["Lost YTD",M(L.c),L.n+" deals"]];
+  $("kpis").innerHTML=tiles.map(t=>`<div class="kpi${t[3]&&past.length?" "+t[3]:""}"><span class="l">${t[0]}</span><span class="v">${t[1]}</span><span class="s">${esc(t[2])}</span></div>`).join("");
+}
+function groupsList(){return [...new Set([...GROUPS,...deals.map(x=>x.group).filter(Boolean)])]}
+function renderGroups(){
+  const act=deals.filter(x=>ACTIVE(x.stage));
+  const row=(lab,a,cls,g)=>`<tr class="${cls||""}${g!=null?" click":""}"${g!=null?` data-g="${esc(g)}" tabindex="0"`:""}><td>${esc(lab)}</td><td class="num">${a.n}</td><td class="num">${D(a.c)}</td><td class="num">${D(a.f)}</td><td class="num">${pct(a.rate)}</td><td class="num">${D(a.fe)}</td><td class="num">${D(a.d)}</td><td class="num">${cls==="sub"?"":D(a.pw)}</td></tr>`;
+  let h=`<thead><tr><th>Group</th><th>Deals</th><th>Commitment</th><th>Funded</th><th>Rate</th><th>Fees</th><th>Deposits</th><th>Prob-wtd</th></tr></thead><tbody>`;
+  for(const g of groupsList())h+=row(g,agg(act.filter(x=>x.group===g)),"",g);
+  h+=row("Active pipeline",agg(act),"sum")+row("Closed",agg(deals.filter(x=>x.stage==="Closed")),"sub")+row("Lost",agg(deals.filter(x=>x.stage==="Lost")),"sub")+row("Total",agg(deals),"sum")+"</tbody>";
+  $("groupTbl").innerHTML=h;
+  $("groupTbl").querySelectorAll("tr[data-g]").forEach(tr=>{const go=()=>{Object.assign(st,{group:tr.dataset.g,stage:"__active",q:"",rm:"",qtr:""});$("fSearch").value="";setTab("deals")};
+    tr.addEventListener("click",go);tr.addEventListener("keydown",e=>{if(e.key==="Enter")go()})});
+}
+function renderStages(){
+  const act=deals.filter(x=>ACTIVE(x.stage));
+  const rows=STAGES.filter(s=>ACTIVE(s.k)).map(s=>({...s,a:agg(act.filter(x=>x.stage===s.k))}));
+  const extra=[...new Set(act.map(x=>x.stage))].filter(s=>!STAGE[s]).map(k=>({k,c:"var(--faint)",p:null,a:agg(act.filter(x=>x.stage===k))}));
+  const all=[...rows,...extra],max=Math.max(1,...all.map(r=>r.a.c));
+  $("stages").innerHTML=all.map(r=>`<div class="st"><div class="row"><span><b style="font-weight:500">${esc(r.k)}</b>${r.p!=null?` <span class="hint">${r.p}%</span>`:""}</span><span style="font-family:var(--num);font-size:12.5px">${M(r.a.c)} · ${r.a.n}</span></div><div class="track"><i style="width:${(r.a.c/max*100).toFixed(1)}%;background:${r.c}"></i></div></div>`).join("");
+  const loi=agg(act.filter(x=>x.stage==="LOI Accepted")).pw,tot=agg(act).pw;
+  $("stageHint").textContent=tot?`LOI accepted is ${Math.round(loi/tot*100)}% of weighted`:"";
+}
+function renderQuarters(){
+  const qs=[...new Set(deals.map(x=>qtr(x.closeDate)).filter(Boolean))].sort((a,b)=>qKey(a).localeCompare(qKey(b)));
+  const rows=qs.map(q=>{const r=deals.filter(x=>qtr(x.closeDate)===q);const c=agg(r.filter(x=>x.stage==="Closed")).c,a=agg(r.filter(x=>ACTIVE(x.stage))).c,l=agg(r.filter(x=>x.stage==="Lost")).c;return {q,c,a,l,t:c+a+l}});
+  const max=Math.max(1,...rows.map(r=>r.t)),w=v=>(v/max*100).toFixed(2)+"%";
+  $("quarters").innerHTML=rows.map(r=>`<div class="q" title="Closed ${M(r.c)} · Active ${M(r.a)} · Lost ${M(r.l)}"><span>${r.q}</span><div class="qbar"><i style="width:${w(r.c)};background:var(--s-closed)"></i><i style="width:${w(r.a)};background:var(--s-loi)"></i><i style="width:${w(r.l)};background:var(--s-lost)"></i></div><span style="text-align:right;font-family:var(--num)">${M(r.t)}</span></div>`).join("")||`<div class="hint">No dated deals yet.</div>`;
+}
+function fillFilters(){
+  const opt=(sel,all,vals,cur)=>{sel.innerHTML=`<option value="">${all}</option>`+vals.map(v=>`<option${v===cur?" selected":""}>${esc(v)}</option>`).join("")};
+  opt($("fGroup"),"All groups",groupsList(),st.group);
+  const rms=[...new Set(deals.map(x=>x.rm).filter(Boolean))].sort();opt($("fRm"),"All RMs",rms,st.rm);
+  const stages=[...new Set([...STAGES.map(s=>s.k),...deals.map(x=>x.stage).filter(Boolean)])];
+  $("fStage").innerHTML=`<option value="">All stages</option><option value="__active"${st.stage==="__active"?" selected":""}>Active only</option>`+stages.map(v=>`<option${v===st.stage?" selected":""}>${esc(v)}</option>`).join("");
+  opt($("fQtr"),"All quarters",[...new Set(deals.map(x=>qtr(x.closeDate)).filter(Boolean))].sort((a,b)=>qKey(a).localeCompare(qKey(b))),st.qtr);
+  $("rmList").innerHTML=rms.map(r=>`<option value="${esc(r)}">`).join("");
+}
+function filtered(){
+  const q=st.q.toLowerCase();
+  const r=deals.filter(x=>(!st.group||x.group===st.group)&&(!st.rm||x.rm===st.rm)&&(!st.stage||(st.stage==="__active"?ACTIVE(x.stage):x.stage===st.stage))&&(!st.qtr||qtr(x.closeDate)===st.qtr)&&(!q||[x.borrower,x.rm,x.notes,x.classification,x.id].join(" ").toLowerCase().includes(q)));
+  const k=st.sort,d=st.dir;
+  return r.sort((a,b)=>{let A=k==="qtr"?qKey(qtr(a.closeDate)):a[k],B=k==="qtr"?qKey(qtr(b.closeDate)):b[k];
+    if(A==null)A=-Infinity;if(B==null)B=-Infinity;return (typeof A==="number"&&typeof B==="number"?A-B:String(A).localeCompare(String(B)))*d||a.row-b.row});
+}
+const COLS=[["borrower","Borrower"],["group","Group"],["rm","RM"],["commitment","Commitment"],["funded","Funded"],["rate","Rate"],["probability","Prob"],["stage","Stage"],["closeDate","Exp. close"],["qtr","Qtr"]];
+function renderDeals(){
+  const r=filtered(),a=agg(r);
+  $("regCount").textContent=`${r.length} of ${deals.length} deals · ${M(a.c)} commitment`;
+  let h="<thead><tr>"+COLS.map(([k,l])=>`<th class="sortable" data-k="${k}">${l}${st.sort===k?(st.dir>0?" ▲":" ▼"):""}</th>`).join("")+"</tr></thead><tbody>";
+  if(!r.length)h+=`<tr><td colspan="10" class="empty">${deals.length?"No deals match these filters.":"No deals yet. Click New deal to add the first one."}</td></tr>`;
+  for(const x of r){const s=STAGE[x.stage]||{c:"var(--sunk)",fg:"var(--fg)"};const past=ACTIVE(x.stage)&&x.closeDate&&x.closeDate<todayISO;
+    h+=`<tr class="click" data-id="${esc(x.id)}" tabindex="0"><td><span class="borrower" title="${esc(x.borrower)}">${esc(x.borrower)}</span></td><td>${esc(x.group)}</td><td>${esc(x.rm)}</td><td class="num">${M(x.commitment)}</td><td class="num">${M(x.funded)}</td><td class="num">${x.rate==null?"–":x.rate.toFixed(2)+"%"}</td><td class="num">${Math.round(x.probability)}%</td><td><span class="chip" style="background:${s.c};color:${s.fg}">${esc(x.stage)}</span></td><td class="num">${fmtDate(x.closeDate)}${past?'<span class="flag">Past</span>':""}</td><td>${qtr(x.closeDate)}</td></tr>`}
+  $("dealTbl").innerHTML=h+"</tbody>";
+  $("dealTbl").querySelectorAll("th[data-k]").forEach(th=>th.addEventListener("click",()=>{const k=th.dataset.k;if(st.sort===k)st.dir*=-1;else{st.sort=k;st.dir=["commitment","funded","rate","probability"].includes(k)?-1:1}renderDeals()}));
+  $("dealTbl").querySelectorAll("tr[data-id]").forEach(tr=>{const go=()=>openDrawer(deals.find(d=>d.id===tr.dataset.id));tr.addEventListener("click",go);tr.addEventListener("keydown",e=>{if(e.key==="Enter")go()})});
+}
+function renderAll(){renderKpis();renderGroups();renderStages();renderQuarters();fillFilters();renderDeals()}
+function setTab(t){st.tab=t;document.querySelectorAll(".tabs button").forEach(b=>b.classList.toggle("on",b.dataset.tab===t));
+  $("tab-overview").hidden=t!=="overview";$("tab-overview").style.display=t==="overview"?"flex":"none";$("tab-deals").hidden=t!=="deals";fillFilters();renderDeals()}
+document.querySelectorAll(".tabs button").forEach(b=>b.addEventListener("click",()=>setTab(b.dataset.tab)));
+
+$("fSearch").addEventListener("input",e=>{st.q=e.target.value;renderDeals()});
+[["fGroup","group"],["fRm","rm"],["fStage","stage"],["fQtr","qtr"]].forEach(([id,k])=>$(id).addEventListener("change",e=>{st[k]=e.target.value;renderDeals()}));
+$("fClear").addEventListener("click",()=>{Object.assign(st,{q:"",group:"",rm:"",stage:"",qtr:""});$("fSearch").value="";fillFilters();renderDeals()});
+
+let tt;function toast(m){const t=$("toast");t.textContent=m;t.hidden=false;clearTimeout(tt);tt=setTimeout(()=>t.hidden=true,2400)}
+function notice(m){$("notice").textContent=m||"";$("notice").hidden=!m}
+function setLive(on,txt){$("dot").classList.toggle("on",on);$("liveTxt").textContent=txt}
+
+// ---------- Form ----------
+$("f_group").innerHTML=GROUPS.map(g=>`<option>${g}</option>`).join("");
+$("f_stage").innerHTML=STAGES.map(s=>`<option>${s.k}</option>`).join("");
+const NUMF=["commitment","funded","fees","deposits"];
+const parseNum=v=>{v=String(v||"").replace(/[$,\s%]/g,"");if(v==="")return null;const n=Number(v);return isNaN(n)?NaN:n};
+NUMF.forEach(k=>$("f_"+k).addEventListener("blur",e=>{const n=parseNum(e.target.value);if(n!=null&&!isNaN(n))e.target.value=n.toLocaleString("en-US")}));
+$("f_stage").addEventListener("change",e=>{const s=STAGE[e.target.value];if(s)$("f_probability").value=s.p});
+let delArmed=false;
+function openDrawer(d){
+  if(!ready)return;
+  editing=d||null;delArmed=false;$("dDelete").classList.remove("armed");$("dDelete").textContent="Delete deal";
+  $("dTitle").textContent=d?"Edit "+d.id:"New deal";$("dDelete").hidden=!d;$("dShow").hidden=!d;
+  const v=d||{group:st.group||GROUPS[0],stage:"Financials Received",probability:10,commitment:0,funded:0,fees:0,deposits:0};
+  $("f_borrower").value=v.borrower||"";
+  if(v.group&&!groupsList().includes(v.group))$("f_group").insertAdjacentHTML("beforeend",`<option>${esc(v.group)}</option>`);
+  $("f_group").value=v.group||GROUPS[0];$("f_rm").value=v.rm||"";$("f_classification").value=v.classification||"";
+  NUMF.forEach(k=>$("f_"+k).value=(v[k]||0).toLocaleString("en-US"));
+  $("f_rate").value=v.rate==null?"":+v.rate.toFixed(4);$("f_probability").value=v.probability==null?"":Math.round(v.probability);
+  if(v.stage&&!STAGE[v.stage]&&![...$("f_stage").options].some(o=>o.value===v.stage))$("f_stage").insertAdjacentHTML("beforeend",`<option>${esc(v.stage)}</option>`);
+  $("f_stage").value=v.stage||"Financials Received";$("f_closeDate").value=v.closeDate||"";$("f_notes").value=v.notes||"";
+  $("dErr").hidden=true;$("drawerBg").hidden=false;$("drawer").hidden=false;setTimeout(()=>$("f_borrower").focus(),30);
+}
+function closeDrawer(){$("drawer").hidden=true;$("drawerBg").hidden=true;editing=null}
+$("dClose").onclick=closeDrawer;$("dCancel").onclick=closeDrawer;$("drawerBg").onclick=closeDrawer;
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("drawer").hidden)closeDrawer()});
+$("newBtn").onclick=()=>openDrawer(null);
+function readForm(){
+  const err=m=>{$("dErr").textContent=m;$("dErr").hidden=false;return null};
+  const o={borrower:$("f_borrower").value.trim(),group:$("f_group").value,rm:$("f_rm").value.trim(),classification:$("f_classification").value.trim(),stage:$("f_stage").value,closeDate:$("f_closeDate").value,notes:$("f_notes").value.trim()};
+  if(!o.borrower)return err("Enter a borrower name.");
+  for(const k of NUMF){const n=parseNum($("f_"+k).value);if(Number.isNaN(n))return err("Enter "+k+" as a number, like 25,000,000.");o[k]=n||0}
+  const r=parseNum($("f_rate").value);if(Number.isNaN(r)||(r!=null&&(r<0||r>30)))return err("Enter the rate as a percent, like 7.25.");o.rate=r;
+  const p=parseNum($("f_probability").value);if(p==null||Number.isNaN(p)||p<0||p>100)return err("Enter a probability from 0 to 100.");o.probability=p;
+  if(!o.closeDate)return err("Pick an expected close date.");
+  return o;
+}
+$("dSave").onclick=async()=>{
+  const o=readForm();if(!o)return;
+  const btn=$("dSave");btn.disabled=true;btn.textContent="Saving…";busy=true;
+  try{const id=await writeDeal(o,editing&&editing.id);closeDrawer();await refresh();toast("Saved "+id+" · "+o.borrower)}
+  catch(e){$("dErr").textContent=(e&&e.user)||"Couldn't save to the workbook. If you only have view access, ask the owner for edit access.";$("dErr").hidden=false}
+  finally{busy=false;btn.disabled=false;btn.textContent="Save deal"}
+};
+$("dDelete").onclick=async()=>{
+  if(!editing)return;
+  if(!delArmed){delArmed=true;$("dDelete").classList.add("armed");$("dDelete").textContent="Confirm delete";return}
+  busy=true;try{const id=editing.id;await clearDeal(id);closeDrawer();await refresh();toast("Deleted "+id)}
+  catch(e){$("dErr").textContent="Couldn't delete. Try again.";$("dErr").hidden=false}finally{busy=false}
+};
+$("dShow").onclick=async()=>{if(editing){const id=editing.id;closeDrawer();try{await showInSheet(id)}catch(e){}}};
+
+// ---------- Sync ----------
+async function refresh(){
+  try{await loadDeals();ready=true;notice("");setLive(true,"Synced with workbook · "+new Date().toLocaleTimeString([], {hour:"numeric",minute:"2-digit"}));renderAll();
+    if(editing&&!deals.find(d=>d.id===editing.id)){closeDrawer();toast("That deal was removed by someone else")}}
+  catch(e){setLive(false,"Not connected");notice((e&&e.user)||"Couldn't read the workbook. Click Refresh to try again.")}
+}
+let rt;function soon(){clearTimeout(rt);rt=setTimeout(()=>{if(!busy)refresh()},700)}
+$("refreshBtn").onclick=()=>refresh();
+window.PipelineApp={rowsToDeals,nextId,serialToISO,isoToSerial,agg,get deals(){return deals},set deals(v){deals=v},renderAll,filtered,st};
+
+renderAll();
+if(window.Office&&Office.onReady){
+  Office.onReady(async info=>{
+    if(info.host!==Office.HostType.Excel){setLive(false,"Open in Excel");notice("This app runs inside Excel. Open 2026 Loan Pipeline Dashboard.xlsx in Excel, then open Loan Pipeline from the Home tab.");return}
+    try{Office.context.document.settings.set("Office.AutoShowTaskpaneWithDocument",true);Office.context.document.settings.saveAsync()}catch(e){}
+    await refresh();
+    try{await Excel.run(async ctx=>{const t=ctx.workbook.tables.getItemOrNullObject(TABLE);await ctx.sync();if(!t.isNullObject){t.onChanged.add(()=>{soon()});await ctx.sync()}})}catch(e){}
+    setInterval(()=>{if(!document.hidden&&!busy&&$("drawer").hidden)refresh()},20000);
+  });
+}else{setLive(false,"Open in Excel");notice("This app runs inside Excel. Open the pipeline workbook in Excel, then open Loan Pipeline from the Home tab.")}
+})();
+</script>
+</body>
+</html>
